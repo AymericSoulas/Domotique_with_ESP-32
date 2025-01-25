@@ -1,10 +1,10 @@
-# Domotique_with_Crow_and_ESP-32
+# Domotique_with_and_ESP-32
 ## Description
 Ce projet a pour but de contrôler des fonctionalités présentes sur une raspberry pi à distance grâce à un serveur http.
 Ce serveur est hébergé sur la raspberry pi et est accessible depuis n'importe quel appareil connecté au même réseau que la raspberry pi.
 On pourra alors en s'y connectant mettre en place un système de domotique pour contrôler des appareils connectés à la raspberry pi.
 Il est alors possible de récupérer des données de température, d'humidité connectés é des ESP-32 présents sur le réseaux et pouvant répondre à des requètes http simples.
-Ces données seront récoltées périodiquement par le serveur et stockées sous forme de fichiers json.
+Ces données seront récoltées périodiquement et stockées sous forme de fichiers json.
 Il sera alors possible de récupérer ces données en se connectant au serveur grâce à une application développée en C#.
 Cette application permet de visualier les données des capteurs ainsi que de contrôler les fonctionnalités de la raspberry pi.
 Il est possible d'utiliser des services comme clouflare ou nGrok pour rendre le serveur accessible depuis l'extérieur du réseau local tout en gardant un certain niveau de sécurité.
@@ -18,12 +18,11 @@ Il est possible d'utiliser des services comme clouflare ou nGrok pour rendre le 
 - Visual Studio Community 2022
 - Git
 - WinSCP
+- .NET 9.0
 
 ## Librairies utilisées
 ### Pour la Raspberry Pi
-- Crow
-- nlohmann/json
-- httplib
+- .NET 9.0
 
 ### Pour Arduino
 - Wifi
@@ -45,8 +44,11 @@ nlohmann/json est un librairie C++ facile d'accès que l'on peut installer simpl
 ```bash
 sudo apt-get install nlohmann-json3-dev
 ```
+.NET n'est présent sur les services de packages que pour les architextures x64.
+Il est donc impossible au moment de la création de ce projet de télécharger dotnet sur une raspberry pi 3, 4 ou 5 via les repos officiels de microsoft.
 
-Une version de crow et de httplib est fournit dans le dossier librairies.
+Il faut alors l'installer à la main:
+https://learn.microsoft.com/fr-fr/dotnet/core/install/linux-scripted-manual#manual-install
 
 ### Pour les ESP-32
 Il est possible que le périphérique ne soit pas reconnu lors du branchement.
