@@ -1,1 +1,17 @@
 GET http://localhost:5262/
+
+###
+GET http://192.168.1.22:5262/temperature
+
+###
+GET http://192.168.1.22:5262/temperature/6
+
+###
+POST http://localhost:5262/temperature
+Content-Type: application/json
+{
+    "appareil": "ESP32-2",
+    "piece": "Chambre",
+    "temperature": 30,
+    "humidite": 0.8
+}

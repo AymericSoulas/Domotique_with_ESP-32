@@ -1,0 +1,17 @@
+GET http://192.168.1.22:5262
+
+###
+GET http://192.168.1.22:5262/temperature
+
+###
+GET http://192.168.1.22:5262/temperature/6
+
+###
+POST http://192.168.1.22:5262/temperature
+Content-Type: application/json
+{
+  "appareil": "ESP32-4",
+  "piece": "Dehors",
+  "temperature": 16.04,
+  "humidite": 39.82
+}
