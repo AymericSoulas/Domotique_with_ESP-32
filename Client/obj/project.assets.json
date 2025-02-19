@@ -1431,11 +1431,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
+      "projectUniqueName": "c:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
       "projectName": "Client",
-      "projectPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
+      "projectPath": "c:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
       "packagesPath": "C:\\Users\\Alex Courties\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\obj\\",
+      "outputPath": "c:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Alex Courties\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "N/gm8a7hisM=",
+  "dgSpecHash": "Fxq/FT+siM8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
+  "projectFilePath": "c:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Alex Courties\\.nuget\\packages\\avalonia\\11.2.1\\avalonia.11.2.1.nupkg.sha512",
     "C:\\Users\\Alex Courties\\.nuget\\packages\\avalonia.angle.windows.natives\\2.1.22045.20230930\\avalonia.angle.windows.natives.2.1.22045.20230930.nupkg.sha512",
