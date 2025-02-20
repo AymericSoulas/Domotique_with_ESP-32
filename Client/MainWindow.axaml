@@ -6,4 +6,8 @@
         x:Class="Client.MainWindow"
         Title="Client">
     Welcome to Avalonia!
+    
+    <grid border="3px">
+      
+    </grid>
 </Window>
