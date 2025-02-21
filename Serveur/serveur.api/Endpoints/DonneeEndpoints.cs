@@ -7,9 +7,6 @@ namespace serveur.api.Endpoints;
 
 public static class DonneesEndpoints
 {
-    private static readonly List<DonneeDto> temperatures = [
-        new (1, DateTime.Now.ToString("yyyy-MM-dd HH:mm"), 0, 20.0f, 0.8f)
-    ];
     public static RouteGroupBuilder MapDonneeEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/donnees");
