@@ -4,7 +4,7 @@ namespace serveur.api.Dtos;
 public record class DonneeDto
 (
     uint Id,
-    string Date,
+    DateTime Date,
     int Appareil,
     float Temperature,
     float Humidite

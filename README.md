@@ -25,6 +25,7 @@ Il est possible d'utiliser des services comme cloudlare ou nGrok pour rendre le 
 ### Pour la Raspberry Pi (packages)
 - .NET 9.0
 - Docker (avec docker compose)
+- Dotnet EF
 
 ### Pour Arduino
 - Wifi
@@ -62,12 +63,12 @@ Puis dans le dossier contenant le fichier [docker-compose.yml](./Serveur/docker-
 ```bash
 docker-compose up -d
 ```
-Le paramètre "up" permet de construire le conteneur et -d de le lancer en arrière plan.
+Le paramètre "up" permet de construire et lancer le conteneur et -d de le lancer en arrière plan.
 
-
+Il est alors nécessaire de configurer le point d'accès du serveur dans le fichier [launchSettings.json](./Serveur/serveur.api/Properties/launchSettings.json) afin de pouvoir s'y connecter.
 L'étape suivante consiste à paramétrer le serveur pour se connecter à la base de données, pour cela il suffit de modifier les informations de la catégorie "WebApiDatabase" dans le fichier [appsettings.json](./Serveur/serveur.api/appsettings.json) en entrant les même informations que lors de la création du conteneur. Il est possible de changer les identifants pour séparer les utilisateurs et limiter les droits d'accès de l'API sur la base de données.
 
-Il faut alors inscrire des pièces et des appareils pour commencer à inscrire des données.
+Il faut alors inscrire des pièces et des appareils pour commencer à inscrire des données, on peut tester le bon fonctionnement avec les requêtes suivantes.
 ```HTTP
 POST http://localhost:5262/Appareil
 Content-Type: application/json
