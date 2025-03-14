@@ -1,17 +1,45 @@
 GET http://192.168.1.22:5262
 
 ###
-GET http://192.168.1.22:5262/temperature
+GET http://192.168.1.22:5262/donnees
 
 ###
-GET http://192.168.1.22:5262/temperature/6
+GET http://192.168.1.22:5262/donnees/5
 
 ###
-POST http://192.168.1.22:5262/temperature
+GET http://192.168.1.22:5262/Piece/1
+
+###
+POST http://192.168.1.22:5262/Piece
 Content-Type: application/json
 {
-  "appareil": "ESP32-4",
-  "piece": "Dehors",
-  "temperature": 16.04,
-  "humidite": 39.82
+  "Nom": "Salon",
+  "Localisation": "Centre de la maison"
+}
+
+###
+POST http://192.168.1.22:5262/Appareil
+Content-Type: application/json
+{
+  "Nom": "Capteur_salon",
+  "Type": "Temperature,Humidite",
+  "Localisation": 2,
+  "Description": "Capteur de temperature et d'humidite du salon"
+}
+
+###
+POST http://192.168.1.22:5262/donnees
+Content-Type: application/json
+{
+  "Appareil": 1,
+  "Temperature": 22.5,
+  "Humidite": 45.5
+}
+
+###
+PUT http://192.168.1.22:5262/Piece/1
+Content-Type: application/json
+{
+  "Nom": "Salon",
+  "Localisation": "Centre de la maison"
 }

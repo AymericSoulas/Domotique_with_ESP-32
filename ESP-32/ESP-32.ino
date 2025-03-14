@@ -10,6 +10,9 @@
 #define I2C_SCL         22      // GPIO9
 #define SEALEVELPRESSURE_HPA    1013.25  // Pression au niveau de la mer
 
+// Id de l'appareil
+#define Id 1
+
 // Création de l'objet BME280
 Adafruit_BME280 bme;
 
@@ -64,14 +67,14 @@ void loop() {
 void sendTemperatureToAPI() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    String apiUrl = "http://192.168.1.22:5262/temperature"; // Il faut remplacer l'adresse et le port par ceux utilisés par l'API
+    String apiUrl = "http://192.168.1.16:5262/donnees"; // Il faut remplacer l'adresse et le port par ceux utilisés par l'API
 
     http.begin(apiUrl);
     http.addHeader("Content-Type", "application/json");
 
     float temperature = bme.readTemperature();
     float humidity = bme.readHumidity();
-    String payload = "{\"appareil\":\"ESP32-1\",\"piece\":\"Salon\",\"temperature\":" + String(temperature) + ",\"humidite\":" + String(humidity) + "}";
+    String payload = "{\"appareil\":" + String(Id) + ",\"temperature\":" + String(temperature) + ",\"humidite\":" + String(humidity) + "}";
 
     int httpResponseCode = http.POST(payload);
 
