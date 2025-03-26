@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Bibliothèques C++\\Domotique_with_ESP-32\\Client\\Client.csproj": {}
+    "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj": {}
   },
   "projects": {
-    "C:\\Bibliothèques C++\\Domotique_with_ESP-32\\Client\\Client.csproj": {
+    "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Bibliothèques C++\\Domotique_with_ESP-32\\Client\\Client.csproj",
+        "projectUniqueName": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
         "projectName": "Client",
-        "projectPath": "C:\\Bibliothèques C++\\Domotique_with_ESP-32\\Client\\Client.csproj",
-        "packagesPath": "C:\\Users\\arsso\\.nuget\\packages\\",
-        "outputPath": "C:\\Bibliothèques C++\\Domotique_with_ESP-32\\Client\\obj\\",
+        "projectPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
+        "packagesPath": "C:\\Users\\Alex Courties\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\arsso\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\Alex Courties\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -26,7 +22,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -53,23 +48,23 @@
           "dependencies": {
             "Avalonia": {
               "target": "Package",
-              "version": "[11.2.5, )"
+              "version": "[11.0.6, )"
             },
             "Avalonia.Desktop": {
               "target": "Package",
-              "version": "[11.2.5, )"
+              "version": "[11.0.6, )"
             },
             "Avalonia.Diagnostics": {
               "target": "Package",
-              "version": "[11.2.5, )"
+              "version": "[11.0.6, )"
             },
             "Avalonia.Fonts.Inter": {
               "target": "Package",
-              "version": "[11.2.5, )"
+              "version": "[11.0.6, )"
             },
             "Avalonia.Themes.Fluent": {
               "target": "Package",
-              "version": "[11.2.5, )"
+              "version": "[11.0.6, )"
             },
             "LiveChartsCore": {
               "target": "Package",
@@ -81,7 +76,7 @@
             },
             "SkiaSharp": {
               "target": "Package",
-              "version": "[3.116.1, )"
+              "version": "[2.88.7, )"
             }
           },
           "imports": [
@@ -100,7 +95,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
