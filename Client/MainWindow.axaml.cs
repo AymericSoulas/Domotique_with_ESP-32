@@ -3,43 +3,62 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Layout;
 using System;
-using LiveChartsCore;
+using System.IO;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
-using LiveChartsCore.Defaults;
 using SkiaSharp;
-using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using LiveChartsCore.SkiaSharpView.Painting;
+
+using Client.Entities;
+using Client.Functions;
+using Client.httpRequests;
+using Microsoft.Extensions.Configuration;
 
 namespace Client
 {
     public partial class MainWindow : Window
     {
         #region Fields
-        private readonly ContentControl pageContent;
-        private readonly Border coloredFrame;
-        private readonly WrapPanel buttonPanel;
-        private readonly StackPanel addButtonContainer;
-        private int newButtonCount = 4; // Changé à 4 pour commencer avec 4 boutons
+        private readonly ContentControl _pageContent;
+        private readonly Border _coloredFrame;
+        private readonly WrapPanel _buttonPanel;
+        private readonly StackPanel _addButtonContainer;
+        private int _newButtonCount = 4; // Changé à 4 pour commencer avec 4 boutons
+        private Data[] _data = new Data[]
+        {
+            new Data
+            {
+                Date = DateTime.Now,
+                Temperature = 20,
+                Humidite = 50,
+                Id = 10,
+                Appareil = 0
+            }
+        };
+        private readonly HttpClient _client = new HttpClient();
+        private string _serverAddress = "http://localhost:5262";
         #endregion
 
         #region Initialization
         public MainWindow()
         {
-            pageContent = new ContentControl();
-            coloredFrame = new Border();
-            buttonPanel = new WrapPanel
+            _pageContent = new ContentControl();
+            _coloredFrame = new Border();
+            _buttonPanel = new WrapPanel
             {
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(30),
             };
-            addButtonContainer = new StackPanel
+            _addButtonContainer = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(20, 5, 20, 5)
             };
-
+            
+            LoadConfiguration();
             AddInitialButtons(); // Nouvelle méthode
             InitializeComponent();
         }
@@ -50,7 +69,7 @@ namespace Client
             for (int i = 1; i <= 4; i++)
             {
                 var button = CreateRoomButton($"Pièce {i}");
-                buttonPanel.Children.Add(button);
+                _buttonPanel.Children.Add(button);
             }
         }
 
@@ -133,9 +152,9 @@ namespace Client
 
         private void AddNewButton(object sender, EventArgs e)
         {
-            var newButton = CreateRoomButton($"Pièce {newButtonCount + 1}");
-            buttonPanel.Children.Add(newButton);
-            newButtonCount++;
+            var newButton = CreateRoomButton($"Pièce {_newButtonCount + 1}");
+            _buttonPanel.Children.Add(newButton);
+            _newButtonCount++;
         }
         #endregion
 
@@ -143,7 +162,7 @@ namespace Client
         private void LoadPage1()
         {
             // Afficher le bouton d'ajout
-            addButtonContainer.IsVisible = true;
+            _addButtonContainer.IsVisible = true;
 
             var page1Content = new StackPanel
             {
@@ -161,26 +180,45 @@ namespace Client
             });
 
             // Retirer le buttonPanel de son parent actuel s'il en a un
-            if (buttonPanel.Parent is Panel parent)
+            if (_buttonPanel.Parent is Panel parent)
             {
-                parent.Children.Remove(buttonPanel);
+                parent.Children.Remove(_buttonPanel);
             }
 
-            page1Content.Children.Add(buttonPanel);
-            pageContent.Content = page1Content;
+            page1Content.Children.Add(_buttonPanel);
+            _pageContent.Content = page1Content;
         }
         
-        private void LoadPage2(Button sourceButton)
+        private async void LoadPage2(Button sourceButton)
         {
             // Cacher le bouton d'ajout
-            addButtonContainer.IsVisible = false;
+            _addButtonContainer.IsVisible = false;
 
             string pageName = sourceButton.Content?.ToString() ?? "Nouvelle pièce";
-            var page2Content = CreatePage2Content(pageName);
-            pageContent.Content = page2Content;
+            
+            // Show loading indicator or message
+            var loadingContent = new StackPanel
+            {
+                Spacing = 20,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            
+            loadingContent.Children.Add(new TextBlock
+            {
+                Text = "Chargement des données...",
+                FontSize = 24,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+            
+            _pageContent.Content = loadingContent;
+            
+            var page2Content = await CreatePage2Content(pageName);
+            _pageContent.Content = page2Content;
         }
 
-        private StackPanel CreatePage2Content(string pageName)
+        private async Task<StackPanel> CreatePage2Content(string pageName)
         {
             var content = new StackPanel
             {
@@ -197,7 +235,7 @@ namespace Client
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
-            var chartsGrid = CreateChartsGrid();
+            var chartsGrid = await CreateChartsGrid();
             content.Children.Add(chartsGrid);
 
             return content;
@@ -205,8 +243,11 @@ namespace Client
         #endregion
 
         #region Charts
-        private Grid CreateChartsGrid()
+        private async Task<Grid> CreateChartsGrid()
         {
+            // Get data and wait for it to complete
+            _data = await this.GetData(_client, _serverAddress, _data);
+            
             var chartsGrid = new Grid { Margin = new Thickness(20) };
             chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
@@ -227,16 +268,8 @@ namespace Client
         {
             return new CartesianChart
             {
-                Series = new ISeries[]
-                {
-                    new LineSeries<double>
-                    {
-                        Values = GenerateRandomData(20, 25),
-                        Name = "Température",
-                        Fill = null
-                    }
-                },
-                XAxes = CreateTimeAxis(),
+                Series = _data.ToCollection(),
+                XAxes = _data.Echelonne(),
                 YAxes = CreateTemperatureAxis(),
                 Height = 300,
                 Width = 350,
@@ -248,40 +281,14 @@ namespace Client
         {
             return new CartesianChart
             {
-                Series = new ISeries[]
-                {
-                    new LineSeries<double>
-                    {
-                        Values = GenerateRandomData(40, 60),
-                        Name = "Humidité",
-                        Fill = null
-                    }
-                },
-                XAxes = CreateTimeAxis(),
+                Series = _data.ToCollection(true),
+                XAxes = _data.Echelonne(),
                 YAxes = CreateHumidityAxis(),
                 Height = 300,
                 Width = 350,
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40))
             };
         }
-
-        private double[] GenerateRandomData(double min, double max)
-        {
-            var random = new Random();
-            return Enumerable.Range(0, 6)
-                .Select(_ => random.NextDouble() * (max - min) + min)
-                .ToArray();
-        }
-
-        private Axis[] CreateTimeAxis() => new[] 
-        {
-            new Axis 
-            {
-                Name = "Temps",
-                NamePaint = new SolidColorPaint(SKColors.White),
-                TextSize = 14
-            }
-        };
 
         private Axis[] CreateTemperatureAxis() => new[] 
         {
@@ -304,6 +311,8 @@ namespace Client
         };
         #endregion
 
+        #region Actions d'initialisation
+        
         private void InitializeComponent()
         {
             Title = "DomoTiX";
@@ -381,15 +390,41 @@ namespace Client
             mainGrid.Children.Add(addButtonContainer);
 
             // Zone de contenu principal
-            pageContent.Margin = new Thickness(20);
-            Grid.SetRow(pageContent, 2);
-            mainGrid.Children.Add(pageContent);
+            _pageContent.Margin = new Thickness(20);
+            Grid.SetRow(_pageContent, 2);
+            mainGrid.Children.Add(_pageContent);
 
             Content = mainGrid;
 
             // Charger la page 1 par défaut
             LoadPage1();
         }
+        //Fonction de chargement de la configuration
+        private void LoadConfiguration()
+        {
+            try
+            {
+                IConfiguration configuration = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build();
+                
+                string? configAddress = configuration["ServerAddress"];
+                if (!string.IsNullOrEmpty(configAddress))
+                {
+                    _serverAddress = configAddress;
+                }
+                else
+                {
+                    Console.WriteLine("Server address not found in configuration!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading configuration: {ex.Message}");
+            }
+        }
+        #endregion
 
         private void ApplyButtonTextChange(Button button, TextBox textBox)
         {

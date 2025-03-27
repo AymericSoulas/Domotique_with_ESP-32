@@ -1,20 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj": {}
+    "C:\\Users\\arsso\\Documents\\Aymeric\\Programmation\\Domotique_with_ESP-32\\Client\\Client.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj": {
+    "C:\\Users\\arsso\\Documents\\Aymeric\\Programmation\\Domotique_with_ESP-32\\Client\\Client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
+        "projectUniqueName": "C:\\Users\\arsso\\Documents\\Aymeric\\Programmation\\Domotique_with_ESP-32\\Client\\Client.csproj",
         "projectName": "Client",
-        "projectPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\Client.csproj",
-        "packagesPath": "C:\\Users\\Alex Courties\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Alex Courties\\Desktop\\GitHub\\Domotique_with_ESP-32\\Client\\obj\\",
+        "projectPath": "C:\\Users\\arsso\\Documents\\Aymeric\\Programmation\\Domotique_with_ESP-32\\Client\\Client.csproj",
+        "packagesPath": "C:\\Users\\arsso\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\arsso\\Documents\\Aymeric\\Programmation\\Domotique_with_ESP-32\\Client\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\Alex Courties\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\arsso\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -22,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -40,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -74,6 +79,14 @@
               "target": "Package",
               "version": "[2.0.0-rc2, )"
             },
+            "Microsoft.Extensions.Configuration": {
+              "target": "Package",
+              "version": "[9.0.3, )"
+            },
+            "Microsoft.Extensions.Configuration.Json": {
+              "target": "Package",
+              "version": "[9.0.3, )"
+            },
             "SkiaSharp": {
               "target": "Package",
               "version": "[2.88.7, )"
@@ -95,7 +108,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
