@@ -26,5 +26,6 @@
 
   <ItemGroup>
     <Folder Include="Controls\" />
+    <Folder Include="UIReferences\" />
   </ItemGroup>
 </Project>

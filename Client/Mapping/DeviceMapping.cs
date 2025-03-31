@@ -17,6 +17,28 @@ public static class DeviceMapping
         };
     }
 
+    public static Device ToEntity(this AppareilDto newdevice)
+    {
+        return new Device()
+        {
+            Id = newdevice.Id,
+            Nom = newdevice.Nom,
+            Type = newdevice.Type,
+            Localisation = newdevice.Localisation,
+            Description = newdevice.Description
+        };
+    }
+    
+    public static Device[] ToEntity(this AppareilDto[] newdevices)
+    {
+        Device[] devices = new Device[newdevices.Length];
+        for (int i = 0; i < newdevices.Length; i++)
+        {
+            devices[i] = newdevices[i].ToEntity();
+        }
+        return devices;
+    }
+
     public static AppareilDto ToAppareilDto(this Device appareil)
     {
         return new

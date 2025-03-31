@@ -4,11 +4,13 @@ using Avalonia.Media;
 using Avalonia.Layout;
 using System;
 using System.IO;
+using System.Linq;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
 using SkiaSharp;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Client.Dtos;
 using LiveChartsCore.SkiaSharpView.Painting;
 
 using Client.Entities;
@@ -20,12 +22,11 @@ namespace Client
 {
     public partial class MainWindow : Window
     {
-        #region Fields
+        #region Variables
         private readonly ContentControl _pageContent;
         private readonly Border _coloredFrame;
         private readonly WrapPanel _buttonPanel;
         private readonly StackPanel _addButtonContainer;
-        private int _newButtonCount = 4; // Changé à 4 pour commencer avec 4 boutons
         private Data[] _data = new Data[]
         {
             new Data
@@ -37,6 +38,7 @@ namespace Client
                 Appareil = 0
             }
         };
+        private Device[]? _devices;
         private readonly HttpClient _client = new HttpClient();
         private string _serverAddress = "http://localhost:5262";
         #endregion
@@ -59,21 +61,21 @@ namespace Client
             };
             
             LoadConfiguration();
-            AddInitialButtons(); // Nouvelle méthode
             InitializeComponent();
         }
 
         private void AddInitialButtons()
         {
+            _buttonPanel.Children.Clear();
             // Ajoute 4 boutons initiaux
-            for (int i = 1; i <= 4; i++)
+            for (int i = 0; i < _devices.Length; i++)
             {
-                var button = CreateRoomButton($"Pièce {i}");
+                var button = CreateRoomButton(_devices[i].Nom, _devices[i].Id);
                 _buttonPanel.Children.Add(button);
             }
         }
 
-        private Button CreateRoomButton(string content)
+        private Button CreateRoomButton(string content, uint Id)
         {
             var button = new Button
             {
@@ -88,59 +90,19 @@ namespace Client
             var renameItem = new MenuItem { Header = "Renommer" };
             var deleteItem = new MenuItem { Header = "Supprimer" };
 
-            renameItem.Click += (s, e) => StartRenameButton(button);
+            renameItem.Click += (s, e) => button.StartRenameButton();
             deleteItem.Click += (s, e) => DeleteButton(button);
 
             contextMenu.Items.Add(renameItem);
             contextMenu.Items.Add(deleteItem);
             button.ContextMenu = contextMenu;
 
-            button.Click += (s, e) => LoadPage2(button);
+            button.Click += (s, e) => LoadPage2(button, Id);
             return button;
         }
         #endregion
 
         #region Button Management
-        private void StartRenameButton(Button button)
-        {
-            var textBox = new TextBox
-            {
-                Text = button.Content.ToString(),
-                MinWidth = 100,
-                Background = new SolidColorBrush(Color.FromRgb(50, 50, 50)),
-                Foreground = Brushes.White,
-                CaretBrush = Brushes.White,
-                SelectionBrush = new SolidColorBrush(Colors.DodgerBlue),
-                BorderThickness = new Thickness(0),
-                Padding = button.Padding
-            };
-
-            textBox.KeyDown += (sender, args) =>
-            {
-                if (args.Key == Avalonia.Input.Key.Enter)
-                {
-                    ApplyButtonTextChange(button, textBox);
-                }
-                else if (args.Key == Avalonia.Input.Key.Escape)
-                {
-                    CancelButtonTextEdit(button, textBox);
-                }
-            };
-
-            textBox.LostFocus += (sender, args) =>
-            {
-                ApplyButtonTextChange(button, textBox);
-            };
-
-            if (button.Parent is Panel panel)
-            {
-                var index = panel.Children.IndexOf(button);
-                panel.Children.RemoveAt(index);
-                panel.Children.Insert(index, textBox);
-                textBox.Focus();
-                textBox.SelectAll();
-            }
-        }
 
         private void DeleteButton(Button button)
         {
@@ -152,14 +114,62 @@ namespace Client
 
         private void AddNewButton(object sender, EventArgs e)
         {
-            var newButton = CreateRoomButton($"Pièce {_newButtonCount + 1}");
-            _buttonPanel.Children.Add(newButton);
-            _newButtonCount++;
+            CreateAppareilDto newdevice = new CreateAppareilDto("ESP-32", "ESP-32", 1, "Un nouvel appareil.");
+            this.CreateDevice(_client, _serverAddress, newdevice);
+            LoadingHomePage();
         }
         #endregion
 
         #region Page Management
-        private void LoadPage1()
+        
+        //Page de chargement 
+        
+        // Chargement de la page d'accueil
+        private async void LoadingHomePage()
+        {
+            //on cache le bouton d'ajout
+            _addButtonContainer.IsVisible = false;
+            
+            // Stackpanel pour le texte de chargement
+            var loadingContent = new StackPanel
+            {
+                Spacing = 20,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            
+            // On ajoute le texte de chargement des données
+            loadingContent.Children.Add(new TextBlock
+            {
+                Text = "Chargement des données...",
+                FontSize = 24,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+            
+            // On remplace le contenu actuel de la page par notre écran de chargement
+            _pageContent.Content = loadingContent;
+            
+            // On crée une nouvelle page qui récupère les données 
+            _devices = await this.GetDevice(_client, _serverAddress);
+            if (_devices == null)
+            {
+                _devices = new Device[]
+                {
+                    new Device()
+                    {
+                        Id = 1,
+                        Localisation = 1,
+                        Nom = "Erreur",
+                        Type = "Erreur"
+                    }
+                };
+            }
+            LoadHomePage();
+
+        }
+        
+        private void LoadHomePage()
         {
             // Afficher le bouton d'ajout
             _addButtonContainer.IsVisible = true;
@@ -186,17 +196,19 @@ namespace Client
             }
 
             page1Content.Children.Add(_buttonPanel);
+            AddInitialButtons();
             _pageContent.Content = page1Content;
         }
         
-        private async void LoadPage2(Button sourceButton)
+        // Page de chargement lors de la récupération des données, sert à éviter des erreurs dues
+        // au délai de récupération des données
+        private async void LoadPage2(Button sourceButton, uint Id)
         {
             // Cacher le bouton d'ajout
             _addButtonContainer.IsVisible = false;
 
             string pageName = sourceButton.Content?.ToString() ?? "Nouvelle pièce";
             
-            // Show loading indicator or message
             var loadingContent = new StackPanel
             {
                 Spacing = 20,
@@ -214,11 +226,12 @@ namespace Client
             
             _pageContent.Content = loadingContent;
             
-            var page2Content = await CreatePage2Content(pageName);
+            // On attend la récupération des données avant de charger la page finale
+            var page2Content = await CreatePage2Content(pageName, Id);
             _pageContent.Content = page2Content;
         }
 
-        private async Task<StackPanel> CreatePage2Content(string pageName)
+        private async Task<StackPanel> CreatePage2Content(string pageName, uint Id)
         {
             var content = new StackPanel
             {
@@ -235,7 +248,7 @@ namespace Client
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
-            var chartsGrid = await CreateChartsGrid();
+            var chartsGrid = await CreateChartsGrid(Id);
             content.Children.Add(chartsGrid);
 
             return content;
@@ -243,10 +256,10 @@ namespace Client
         #endregion
 
         #region Charts
-        private async Task<Grid> CreateChartsGrid()
+        private async Task<Grid> CreateChartsGrid(uint Id)
         {
             // Get data and wait for it to complete
-            _data = await this.GetData(_client, _serverAddress, _data);
+            _data = await this.GetData(_client, _serverAddress, _data, Id = Id);
             
             var chartsGrid = new Grid { Margin = new Thickness(20) };
             chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
@@ -316,10 +329,9 @@ namespace Client
         private void InitializeComponent()
         {
             Title = "DomoTiX";
-            Width = 800;
-            Height = 600;
+            Width = 1600;
+            Height = 800;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            
 
             var mainGrid = new Grid();
             mainGrid.RowDefinitions = new RowDefinitions();
@@ -328,7 +340,8 @@ namespace Client
             mainGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));  // Content
             mainGrid.Background = new SolidColorBrush(Color.FromRgb(50, 50, 50));
 
-            // En-tête avec titre et bouton home
+            // Création de l'en-tête
+            // Création du conteneur
             var headerPanel = new Grid
             {
                 Margin = new Thickness(10),
@@ -337,7 +350,8 @@ namespace Client
             };
             headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-
+            
+            // Titre de la page
             var titleLabel = new TextBlock
             {
                 Text = "DomoTiX",
@@ -347,6 +361,7 @@ namespace Client
                 Margin = new Thickness(10, 0)
             };
 
+            // Bouton d'accueil
             var homeButton = new Button
             {
                 Content = "🏠",
@@ -358,12 +373,18 @@ namespace Client
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 0, 10, 0)
             };
-            homeButton.Click += (s, e) => LoadPage1();
-
+            //Action lors du click sur le titre
+            homeButton.Click += (s, e) => LoadingHomePage();
+            
+            //Positionnement des éléments
             Grid.SetColumn(titleLabel, 0);
             Grid.SetColumn(homeButton, 1);
+            
+            //Ajout au parent
             headerPanel.Children.Add(titleLabel);
             headerPanel.Children.Add(homeButton);
+            
+            // Ajout de l'en-tête au Grid principal
             Grid.SetRow(headerPanel, 0);
             mainGrid.Children.Add(headerPanel);
 
@@ -397,7 +418,7 @@ namespace Client
             Content = mainGrid;
 
             // Charger la page 1 par défaut
-            LoadPage1();
+            LoadingHomePage();
         }
         //Fonction de chargement de la configuration
         private void LoadConfiguration()
@@ -426,28 +447,6 @@ namespace Client
         }
         #endregion
 
-        private void ApplyButtonTextChange(Button button, TextBox textBox)
-        {
-            if (!string.IsNullOrWhiteSpace(textBox.Text))
-            {
-                button.Content = textBox.Text;
-            }
-            ReplaceTextBoxWithButton(button, textBox);
-        }
 
-        private void CancelButtonTextEdit(Button button, TextBox textBox)
-        {
-            ReplaceTextBoxWithButton(button, textBox);
-        }
-
-        private void ReplaceTextBoxWithButton(Button button, TextBox textBox)
-        {
-            if (textBox.Parent is Panel panel)
-            {
-                var index = panel.Children.IndexOf(textBox);
-                panel.Children.RemoveAt(index);
-                panel.Children.Insert(index, button);
-            }
-        }
     }
 }

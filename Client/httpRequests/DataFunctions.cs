@@ -16,7 +16,8 @@ public static class DataFunctions
      */
     public static async Task<Data[]> GetData(this MainWindow mainWindow, HttpClient client, string url,
         Data[] data,
-    DateTime beginTime = default(DateTime), DateTime endTime = default(DateTime))
+        uint deviceid = 1,
+        DateTime beginTime = default(DateTime), DateTime endTime = default(DateTime))
     {
         try
         {
@@ -37,10 +38,10 @@ public static class DataFunctions
                 }
 
                 //Création de la requête pour récupérer les données auprès de l'API
-                HttpResponseMessage response = await client.GetAsync(url + "/donnees/1/" +
+                HttpResponseMessage response = await client.GetAsync(url + $"/donnees/{deviceid}/" +
                                                                      beginTime.ToString("yyyy-MM-dd:HH-mm") +
                                                                      "/" + endTime.ToString("yyyy-MM-dd:HH-mm"));
-                Console.WriteLine(url + "/donnees/1/" +
+                Console.WriteLine(url + $"/donnees/{deviceid}/" +
                                   beginTime.AddDays(-2).ToString("yyyy-MM-dd:HH-mm") + "/" +
                                   endTime.ToString("yyyy-MM-dd:HH-mm"));
 
