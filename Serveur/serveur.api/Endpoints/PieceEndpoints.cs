@@ -1,4 +1,5 @@
-﻿using PostgreSQL.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using PostgreSQL.Data;
 using serveur.api.Dtos;
 using serveur.api.Entities;
 using serveur.api.Mapping;
@@ -15,8 +16,15 @@ public static class PieceEndpoints
 
         //Message lors de l'accès à la route "racine" des Pièces
         group.MapGet("/", () => "try putting an ID Behind");
+        
+        //Récupération de la totalité des pièces enregistrées dans la base de données
+        group.MapGet("all", (AppDbContext dbContext) =>
+        {
+            Piece?[] piece = dbContext.pieces.ToArray();
+            return piece is null ? Results.NoContent() : Results.Ok(piece);
+        }).WithName("GetAllPieces");
 
-        //Action l'ors de l'accès à une Pièce unique
+        //Action lors de l'accès à une Pièce unique
         group.MapGet("/{id}", (int id, AppDbContext dbContext) =>
         {
             Piece? piece = dbContext.pieces.Find(id);
@@ -47,6 +55,13 @@ public static class PieceEndpoints
 
             dbContext.SaveChanges();
             return Results.Ok(piece.ToPieceDto());
+        });
+        
+        //Suppression d'une pièce
+        group.MapDelete("/{id}", (int id, AppDbContext dbContext) =>
+        {
+            dbContext.pieces.Where(piece => piece.Id == id).ExecuteDelete();
+            return Results.NoContent();
         });
 
         //On retourne le groupe de routes

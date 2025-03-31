@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+#For the server (Was using nohup at some point to get it up in the background but switched to systemctl)
+nohup.out
+
 # dotenv files
 .env
 

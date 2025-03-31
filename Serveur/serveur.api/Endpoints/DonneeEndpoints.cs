@@ -7,25 +7,25 @@ using System.Globalization;
 namespace serveur.api.Endpoints;
 
 
-// Une classe gérant les endpoints pour les données
+// Une classe gÃ©rant les endpoints pour les donnï¿½es
 public static class DonneesEndpoints
 {
     public static RouteGroupBuilder MapDonneeEndpoints(this WebApplication app)
     {
-        //Définition du groupe de routes pour les données
+        //Dï¿½finition du groupe de routes pour les donnï¿½es
         var group = app.MapGroup("/donnees");
 
-        //Message lors de l'accès à la route "racine" des donnees
+        //Message lors de l'accÃ¨s ï¿½ la route "racine" des donnees
         group.MapGet("/", () => "try putting an ID Behind");
-
-        //Action l'ors de l'accès à une donnée unique
+        
+        //Action lors de l'accÃ¨s Ã  une donnÃ©e unique
         group.MapGet("/{id}", (uint id, AppDbContext dbContext) =>
         {
             Donnees? donnee = dbContext.donnees.Find(id);
             return donnee is null ? Results.NotFound() : Results.Ok(donnee);
         }).WithName("Get_individual_data");
 
-        //Accès à un groupe de données selon l'appareil et un intervale de dates
+        //Accï¿½s ï¿½ un groupe de donnï¿½es selon l'appareil et un intervale de dates
         group.MapGet("/{deviceid}/{BeginDate}/{EndDate}", (uint deviceid, string BeginDate, string EndDate, AppDbContext dbContext) =>
         {
             DateTime beginDateTime;
@@ -37,7 +37,7 @@ public static class DonneesEndpoints
             }
             catch (FormatException)
             {
-                return Results.BadRequest("Les dates doivent être au format 'yyyy-MM-dd:HH-mm'.");
+                return Results.BadRequest("Les dates doivent ï¿½tre au format 'yyyy-MM-dd:HH-mm'.");
             }
             List<Donnees> donnees = dbContext.donnees
             .Where(d => d.Appareil == deviceid && d.Date >= beginDateTime && d.Date <=endDateTime)
@@ -45,7 +45,7 @@ public static class DonneesEndpoints
             return donnees is null ? Results.NotFound() : Results.Ok(donnees);
         }).WithName("Get_data_by_device_and_date");
 
-        //Création d'une donnée (route utilisée par les capteurs)
+        //Crï¿½ation d'une donnï¿½e (route utilisï¿½e par les capteurs)
         group.MapPost("/", (CreateDonneeDto temp, AppDbContext dbContext) =>
         {
             Entities.Donnees temperature = temp.ToEntity();
