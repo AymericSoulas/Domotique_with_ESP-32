@@ -4,19 +4,20 @@ using Avalonia.Media;
 using Avalonia.Layout;
 using System;
 using System.IO;
-using System.Linq;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
 using SkiaSharp;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Client.Dtos;
 using LiveChartsCore.SkiaSharpView.Painting;
+using Microsoft.Extensions.Configuration;
 
+using Client.Controls;
+using Client.Dtos;
 using Client.Entities;
 using Client.Functions;
 using Client.httpRequests;
-using Microsoft.Extensions.Configuration;
+
 
 namespace Client
 {
@@ -97,7 +98,7 @@ namespace Client
             contextMenu.Items.Add(deleteItem);
             button.ContextMenu = contextMenu;
 
-            button.Click += (s, e) => LoadPage2(button, Id);
+            button.Click += (s, e) => LoadSensorPage(button, Id);
             return button;
         }
         #endregion
@@ -194,7 +195,7 @@ namespace Client
             {
                 parent.Children.Remove(_buttonPanel);
             }
-
+            page1Content.Children.Add(new TextBlockCustom("Bonjour"));
             page1Content.Children.Add(_buttonPanel);
             AddInitialButtons();
             _pageContent.Content = page1Content;
@@ -202,7 +203,7 @@ namespace Client
         
         // Page de chargement lors de la récupération des données, sert à éviter des erreurs dues
         // au délai de récupération des données
-        private async void LoadPage2(Button sourceButton, uint Id)
+        private async void LoadSensorPage(Button sourceButton, uint Id)
         {
             // Cacher le bouton d'ajout
             _addButtonContainer.IsVisible = false;
@@ -227,18 +228,22 @@ namespace Client
             _pageContent.Content = loadingContent;
             
             // On attend la récupération des données avant de charger la page finale
-            var page2Content = await CreatePage2Content(pageName, Id);
-            _pageContent.Content = page2Content;
+            var sensorpagecontent = await CreateSensorPage(pageName, Id);
+            _pageContent.Content = sensorpagecontent;
         }
 
-        private async Task<StackPanel> CreatePage2Content(string pageName, uint Id)
+        private async Task<Grid> CreateSensorPage(string pageName, uint Id)
         {
-            var content = new StackPanel
+            var content = new Grid()
             {
-                Spacing = 20,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                Margin = new Thickness(10),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
             };
+            
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Parse("20")));
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Star));
 
             content.Children.Add(new TextBlock
             {
@@ -248,7 +253,12 @@ namespace Client
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
+            Data lastData = _data[_data.Length - 1];
+            
+            
+            
             var chartsGrid = await CreateChartsGrid(Id);
+            Grid.SetRow(chartsGrid, 2);
             content.Children.Add(chartsGrid);
 
             return content;
@@ -261,9 +271,14 @@ namespace Client
             // Get data and wait for it to complete
             _data = await this.GetData(_client, _serverAddress, _data, Id = Id);
             
-            var chartsGrid = new Grid { Margin = new Thickness(20) };
-            chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-            chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            var chartsGrid = new Grid
+            {
+                Margin = new Thickness(20),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
 
             var tempChart = CreateTemperatureChart();
             var humChart = CreateHumidityChart();
@@ -284,21 +299,30 @@ namespace Client
                 Series = _data.ToCollection(),
                 XAxes = _data.Echelonne(),
                 YAxes = CreateTemperatureAxis(),
-                Height = 300,
-                Width = 350,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40))
             };
         }
 
         private CartesianChart CreateHumidityChart()
         {
+            var series = _data.ToCollection();
+            foreach (var serie in series)
+            {
+                if (serie is LineSeries<Data> lineSeries)
+                {
+                    lineSeries.GeometrySize = 10; // Taille des points en pixels
+                    lineSeries.GeometryFill = new SolidColorPaint(SKColors.White);
+                }
+            }
             return new CartesianChart
             {
-                Series = _data.ToCollection(true),
+                Series = series,
                 XAxes = _data.Echelonne(),
                 YAxes = CreateHumidityAxis(),
-                Height = 300,
-                Width = 350,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40))
             };
         }
