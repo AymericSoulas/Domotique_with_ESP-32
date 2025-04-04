@@ -1,37 +1,28 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Client.Entities;
+using System.Threading.Tasks;
 
 namespace Client.Functions;
 
 public static class ButtonChangeFonctions
 {
-    public static void ApplyButtonTextChange(this Button button, TextBox textBox)
+    public static async void ApplyButtonTextChange(this Button button, MainWindow window, TextBox textBox, Device device)
     {
         if (!string.IsNullOrWhiteSpace(textBox.Text))
         {
             button.Content = textBox.Text;
         }
-
-        ReplaceTextBoxWithButton(button, textBox);
+        await window.ReplaceTextBoxWithButton(button, textBox, device);
     }
 
-    public static void CancelButtonTextEdit(this Button button, TextBox textBox)
+    public static async void CancelButtonTextEdit(this Button button, MainWindow window, TextBox textBox, Device device)
     {
-        ReplaceTextBoxWithButton(button, textBox);
+        await window.ReplaceTextBoxWithButton(button, textBox, device);
     }
-
-    public static void ReplaceTextBoxWithButton(this Button button, TextBox textBox)
-    {
-        if (textBox.Parent is Panel panel)
-        {
-            var index = panel.Children.IndexOf(textBox);
-            panel.Children.RemoveAt(index);
-            panel.Children.Insert(index, button);
-        }
-    }
-
-    public static void StartRenameButton(this Button button)
+    
+    public static void StartRenameButton(this Button button, MainWindow window, Device device)
     {
         var textBox = new TextBox
         {
@@ -42,22 +33,23 @@ public static class ButtonChangeFonctions
             CaretBrush = Brushes.White,
             SelectionBrush = new SolidColorBrush(Colors.DodgerBlue),
             BorderThickness = new Thickness(0),
-            Padding = button.Padding
+            Padding = button.Padding,
+            Tag = device // Stocker l'appareil dans le Tag du TextBox
         };
 
         textBox.KeyDown += (sender, args) =>
         {
             if (args.Key == Avalonia.Input.Key.Enter)
             {
-                button.ApplyButtonTextChange(textBox);
+                button.ApplyButtonTextChange(window, textBox, device);
             }
             else if (args.Key == Avalonia.Input.Key.Escape)
             {
-                button.CancelButtonTextEdit(textBox);
+                button.CancelButtonTextEdit(window, textBox, device);
             }
         };
 
-        textBox.LostFocus += (sender, args) => { button.ApplyButtonTextChange(textBox); };
+        textBox.LostFocus += (sender, args) => { button.ApplyButtonTextChange(window, textBox, device); };
 
         if (button.Parent is Panel panel)
         {

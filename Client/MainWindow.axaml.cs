@@ -3,7 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Layout;
 using System;
+using System.ComponentModel;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
 using SkiaSharp;
@@ -24,10 +27,21 @@ namespace Client
     public partial class MainWindow : Window
     {
         #region Variables
+        // Variables contenant des éléments graphiques
         private readonly ContentControl _pageContent;
         private readonly Border _coloredFrame;
         private readonly WrapPanel _buttonPanel;
         private readonly StackPanel _addButtonContainer;
+        
+        // Variables de sélection de dates
+        private DateTime _startDate;
+        private DateTime _endDate;
+        private readonly DatePicker _startDatePicker;
+        private readonly DatePicker _endDatePicker;
+        private readonly TimePicker _startTimePicker;
+        private readonly TimePicker _endTimePicker;
+        
+        //Variables contenant les données récoltées depuis l'API
         private Data[] _data = new Data[]
         {
             new Data
@@ -41,7 +55,9 @@ namespace Client
         };
         private Device[]? _devices;
         private readonly HttpClient _client = new HttpClient();
+        public HttpClient Client => _client;
         private string _serverAddress = "http://localhost:5262";
+        public string ServerAddress => _serverAddress;
         #endregion
 
         #region Initialization
@@ -61,6 +77,46 @@ namespace Client
                 Margin = new Thickness(20, 5, 20, 5)
             };
             
+            // Initialisation des sélecteurs de dates et d'heures
+            _endDate = DateTime.Now;
+            _startDate = DateTime.Now.AddHours(-1);
+            
+            _startDatePicker = new DatePicker
+            {
+                SelectedDate = _startDate,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(5, 0)
+            };
+            
+            _endDatePicker = new DatePicker
+            {
+                SelectedDate = _endDate,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(5, 0)
+            };
+
+            _startTimePicker = new TimePicker
+            {
+                SelectedTime = new TimeSpan(_startDate.Hour, _startDate.Minute, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(5, 0),
+                ClockIdentifier = "24HourClock"
+            };
+            
+            _endTimePicker = new TimePicker
+            {
+                SelectedTime = new TimeSpan(_endDate.Hour, _endDate.Minute, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(5, 0),
+                ClockIdentifier = "24HourClock"
+            };
+            
+            // Correction des gestionnaires d'événements avec des lambdas pour adapter les signatures
+            _startDatePicker.SelectedDateChanged += (sender, e) => OnDateTimeSelectionChanged(sender, EventArgs.Empty);
+            _endDatePicker.SelectedDateChanged += (sender, e) => OnDateTimeSelectionChanged(sender, EventArgs.Empty);
+            _startTimePicker.SelectedTimeChanged += (sender, e) => OnDateTimeSelectionChanged(sender, EventArgs.Empty);
+            _endTimePicker.SelectedTimeChanged += (sender, e) => OnDateTimeSelectionChanged(sender, EventArgs.Empty);
+            
             LoadConfiguration();
             InitializeComponent();
         }
@@ -71,12 +127,12 @@ namespace Client
             // Ajoute 4 boutons initiaux
             for (int i = 0; i < _devices.Length; i++)
             {
-                var button = CreateRoomButton(_devices[i].Nom, _devices[i].Id);
+                var button = CreateRoomButton(_devices[i].Nom, (uint)i);
                 _buttonPanel.Children.Add(button);
             }
         }
 
-        private Button CreateRoomButton(string content, uint Id)
+        private Button CreateRoomButton(string content, uint id)
         {
             var button = new Button
             {
@@ -84,22 +140,58 @@ namespace Client
                 Padding = new Thickness(50, 20),
                 Margin = new Thickness(10),
                 Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                Tag = id // Stocker l'ID de l'appareil dans le Tag
             };
 
             var contextMenu = new ContextMenu();
             var renameItem = new MenuItem { Header = "Renommer" };
             var deleteItem = new MenuItem { Header = "Supprimer" };
 
-            renameItem.Click += (s, e) => button.StartRenameButton();
+            renameItem.Click += (s, e) => button.StartRenameButton(this, _devices[(int)id]);
             deleteItem.Click += (s, e) => DeleteButton(button);
 
             contextMenu.Items.Add(renameItem);
             contextMenu.Items.Add(deleteItem);
             button.ContextMenu = contextMenu;
 
-            button.Click += (s, e) => LoadSensorPage(button, Id);
+            button.Click += (s, e) => LoadSensorPage(button, id);
             return button;
+        }
+        #endregion
+
+        #region Date Selection Handling
+        private void OnDateTimeSelectionChanged(object? sender, EventArgs e)
+        {
+            UpdateSelectedDateTimes();
+            
+            // Si on est sur une page capteur, on recharge les données
+            if (_pageContent.Content is Grid grid && grid.Children.Count > 0 && grid.Children[0] is TextBlock titleBlock)
+            {
+                var button = _buttonPanel.Children.OfType<Button>().FirstOrDefault(b => b.Content.ToString() == titleBlock.Text);
+                if (button != null && button.Tag is uint id)
+                {
+                    LoadSensorPage(button, id);
+                }
+            }
+        }
+
+        private void UpdateSelectedDateTimes()
+        {
+            // Convertir DateTimeOffset en DateTime et combiner avec l'heure sélectionnée
+            if (_startDatePicker.SelectedDate.HasValue && _startTimePicker.SelectedTime.HasValue)
+            {
+                DateTime date = _startDatePicker.SelectedDate.Value.DateTime;
+                TimeSpan time = _startTimePicker.SelectedTime.Value;
+                _startDate = new DateTime(date.Year, date.Month, date.Day, time.Hours, time.Minutes, 0);
+            }
+            
+            if (_endDatePicker.SelectedDate.HasValue && _endTimePicker.SelectedTime.HasValue)
+            {
+                DateTime date = _endDatePicker.SelectedDate.Value.DateTime;
+                TimeSpan time = _endTimePicker.SelectedTime.Value;
+                _endDate = new DateTime(date.Year, date.Month, date.Day, time.Hours, time.Minutes, 0);
+            }
         }
         #endregion
 
@@ -111,6 +203,23 @@ namespace Client
             {
                 panel.Children.Remove(button);
             }
+            uint deviceId = (uint)button.Tag;
+            this.DeleteDevice(_devices[deviceId]);
+        }
+        
+        public async Task ReplaceTextBoxWithButton(Button button, TextBox textBox, Device device)
+        {
+            if (textBox.Parent is Panel panel)
+            {
+                var index = panel.Children.IndexOf(textBox);
+                panel.Children.RemoveAt(index);
+                panel.Children.Insert(index, button);
+            }
+            
+            device.Nom = textBox.Text;
+            // Attendre que la modification soit terminée avant d'actualiser la page
+            await this.ModifyDevice(device);
+            LoadingHomePage();
         }
 
         private void AddNewButton(object sender, EventArgs e)
@@ -195,7 +304,6 @@ namespace Client
             {
                 parent.Children.Remove(_buttonPanel);
             }
-            page1Content.Children.Add(new TextBlockCustom("Bonjour"));
             page1Content.Children.Add(_buttonPanel);
             AddInitialButtons();
             _pageContent.Content = page1Content;
@@ -203,7 +311,7 @@ namespace Client
         
         // Page de chargement lors de la récupération des données, sert à éviter des erreurs dues
         // au délai de récupération des données
-        private async void LoadSensorPage(Button sourceButton, uint Id)
+        private async void LoadSensorPage(Button sourceButton, uint id)
         {
             // Cacher le bouton d'ajout
             _addButtonContainer.IsVisible = false;
@@ -228,11 +336,11 @@ namespace Client
             _pageContent.Content = loadingContent;
             
             // On attend la récupération des données avant de charger la page finale
-            var sensorpagecontent = await CreateSensorPage(pageName, Id);
+            var sensorpagecontent = await CreateSensorPage(pageName, id);
             _pageContent.Content = sensorpagecontent;
         }
 
-        private async Task<Grid> CreateSensorPage(string pageName, uint Id)
+        private async Task<Grid> CreateSensorPage(string pageName, uint id)
         {
             var content = new Grid()
             {
@@ -242,7 +350,9 @@ namespace Client
             };
             
             content.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            content.RowDefinitions.Add(new RowDefinition(GridLength.Parse("20")));
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Parse("10")));
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            content.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
             content.RowDefinitions.Add(new RowDefinition(GridLength.Star));
 
             content.Children.Add(new TextBlock
@@ -252,24 +362,71 @@ namespace Client
                 Foreground = Brushes.White,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
-
-            Data lastData = _data[_data.Length - 1];
             
-            
-            
-            var chartsGrid = await CreateChartsGrid(Id);
-            Grid.SetRow(chartsGrid, 2);
-            content.Children.Add(chartsGrid);
+            TextBlockCustom description;
+            var chartsGrid = await CreateChartsGrid(id);
+            if (_devices != null && _data.Length != 0)
+            {
+                description = new TextBlockCustom(_devices[id].Description);
+                var datagrid = new Grid()
+                {
+                    Margin = new Thickness(10),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                };
+                
+                
+                
+                //Création de la partie de 
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Parse("10")));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Parse("10")));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Parse("10")));
+                datagrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                
+                
+                //Crée les valeurs instantanées
+                var temp =new TextBlockCustom("Temperature: " + _data.Last().Temperature.ToString() + "°C");
+                var hum = new TextBlockCustom("Humidité: " + _data.Last().Humidite.ToString() + "%");
+                var tempmoy = new TextBlockCustom("Temperature moyenne: " + _data.MoyenneTemp().ToString() + "°C");
+                var hummoy = new TextBlockCustom("Humidité moyenne: " + _data.MoyenneHum().ToString() + "%");
+                
+                Grid.SetColumn(temp, 0);
+                Grid.SetColumn(tempmoy, 4);
+                Grid.SetColumn(hum, 2);
+                Grid.SetColumn(hummoy, 6);
+                
+                datagrid.Children.Add(temp);
+                datagrid.Children.Add(hum);
+                datagrid.Children.Add(tempmoy);
+                datagrid.Children.Add(hummoy);
+                
+                Grid.SetRow(datagrid, 3);
+                Grid.SetRow(description, 2);
+                Grid.SetRow(chartsGrid, 4);
+                
+                content.Children.Add(description);
+                content.Children.Add(datagrid);
+                content.Children.Add(chartsGrid);
+            }
+            else
+            {
+                Console.WriteLine("Pas de données trouvées.");
+                content = new Grid();
+                content.Children.Add(new TextBlockCustom("Pas de données trouvées."));
+            }
 
             return content;
         }
         #endregion
 
         #region Charts
-        private async Task<Grid> CreateChartsGrid(uint Id)
+        private async Task<Grid> CreateChartsGrid(uint id)
         {
             // Get data and wait for it to complete
-            _data = await this.GetData(_client, _serverAddress, _data, Id = Id);
+            _data = await this.GetData(_client, _serverAddress, _data, id, _startDate, _endDate);
             
             var chartsGrid = new Grid
             {
@@ -278,16 +435,25 @@ namespace Client
                 VerticalAlignment = VerticalAlignment.Stretch
             };
             chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
-            chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            //chartsGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            CartesianChart tempChart;
+            if (_devices != null)
+            {
+                tempChart = CreateTemperatureChart();
+                //var humChart = CreateHumidityChart();
+                                                     
+                Grid.SetColumn(tempChart, 0);
+                //Grid.SetColumn(humChart, 1);
 
-            var tempChart = CreateTemperatureChart();
-            var humChart = CreateHumidityChart();
-
-            Grid.SetColumn(tempChart, 0);
-            Grid.SetColumn(humChart, 1);
-
-            chartsGrid.Children.Add(tempChart);
-            chartsGrid.Children.Add(humChart);
+                chartsGrid.Children.Add(tempChart);
+                //chartsGrid.Children.Add(humChart);
+            }
+            else
+            {
+                chartsGrid.Children.Add(new TextBlockCustom("Il n'y a pas de données disponibles pour cet appareil durant cette période"));
+            }
+            
+            
 
             return chartsGrid;
         }
@@ -298,7 +464,7 @@ namespace Client
             {
                 Series = _data.ToCollection(),
                 XAxes = _data.Echelonne(),
-                YAxes = CreateTemperatureAxis(),
+                YAxes = CreateAxis(),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40))
@@ -334,6 +500,22 @@ namespace Client
                 Name = "Température (°C)",
                 NamePaint = new SolidColorPaint(SKColors.White),
                 TextSize = 14
+            },
+        };
+        
+        private Axis[] CreateAxis() => new[] 
+        {
+            new Axis 
+            {
+                Name = "Température (°C)",
+                NamePaint = new SolidColorPaint(SKColors.Blue),
+                TextSize = 14
+            },
+            new Axis
+            {
+                Name = "Humidité (%)",
+                NamePaint = new SolidColorPaint(SKColors.Red),
+                TextSize = 14
             }
         };
 
@@ -353,6 +535,7 @@ namespace Client
         private void InitializeComponent()
         {
             Title = "DomoTiX";
+            Icon = new WindowIcon("favicon.ico");
             Width = 1600;
             Height = 800;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -372,8 +555,14 @@ namespace Client
                 Background = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
                 Height = 50
             };
-            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star)); // Titre
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Label Date début
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Sélecteur Date début
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Sélecteur Heure début
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Label Date fin
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Sélecteur Date fin
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Sélecteur Heure fin
+            headerPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto)); // Bouton accueil
             
             // Titre de la page
             var titleLabel = new TextBlock
@@ -381,6 +570,26 @@ namespace Client
                 Text = "DomoTiX",
                 Foreground = Brushes.White,
                 FontSize = 30,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(10, 0)
+            };
+            
+            // Label pour la date de début
+            var startDateLabel = new TextBlock
+            {
+                Text = "Du :",
+                Foreground = Brushes.White,
+                FontSize = 16,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(10, 0)
+            };
+            
+            // Label pour la date de fin
+            var endDateLabel = new TextBlock
+            {
+                Text = "Au :",
+                Foreground = Brushes.White,
+                FontSize = 16,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(10, 0)
             };
@@ -397,15 +606,27 @@ namespace Client
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 0, 10, 0)
             };
-            //Action lors du click sur le titre
+            //Action lors du click sur le titre On charge la page d'accueil
             homeButton.Click += (s, e) => LoadingHomePage();
             
             //Positionnement des éléments
             Grid.SetColumn(titleLabel, 0);
-            Grid.SetColumn(homeButton, 1);
+            Grid.SetColumn(startDateLabel, 1);
+            Grid.SetColumn(_startDatePicker, 2);
+            Grid.SetColumn(_startTimePicker, 3);
+            Grid.SetColumn(endDateLabel, 4);
+            Grid.SetColumn(_endDatePicker, 5);
+            Grid.SetColumn(_endTimePicker, 6);
+            Grid.SetColumn(homeButton, 7);
             
             //Ajout au parent
             headerPanel.Children.Add(titleLabel);
+            headerPanel.Children.Add(startDateLabel);
+            headerPanel.Children.Add(_startDatePicker);
+            headerPanel.Children.Add(_startTimePicker);
+            headerPanel.Children.Add(endDateLabel);
+            headerPanel.Children.Add(_endDatePicker);
+            headerPanel.Children.Add(_endTimePicker);
             headerPanel.Children.Add(homeButton);
             
             // Ajout de l'en-tête au Grid principal
@@ -418,7 +639,8 @@ namespace Client
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(20, 5, 20, 5)
             };
-
+            
+            //Ajout du bouton contenu dans le stackpanel du conteneur de bouton
             var addButton = new Button
             {
                 Content = "Ajouter une pièce",
@@ -444,7 +666,7 @@ namespace Client
             // Charger la page 1 par défaut
             LoadingHomePage();
         }
-        //Fonction de chargement de la configuration
+        //Fonction de chargement de la configuration contenue dans appsettings.json
         private void LoadConfiguration()
         {
             try
@@ -474,3 +696,4 @@ namespace Client
 
     }
 }
+
