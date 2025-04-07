@@ -1,5 +1,5 @@
-#On ignore les fichiers générés par VS
+#On ignore les fichiers gï¿½nï¿½rï¿½s par VS
 .vs/
 .vscode/
-#On ignore le fichier contenant les informations de connexion à la box
+#On ignore le fichier contenant les informations de connexion ï¿½ la box
 informations.h

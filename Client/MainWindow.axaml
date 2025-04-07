@@ -6,5 +6,6 @@
         x:Class="Client.MainWindow"
         Title="Client"
         Icon="Assets\favicon.ico">
-
+        Title="Client">
+ 
 </Window>
