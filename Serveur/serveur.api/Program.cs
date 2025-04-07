@@ -7,22 +7,22 @@ using serveur.api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Configuration de la base de données et ajout du service à l'API
+//Configuration de la base de donnÃ©es et ajout du service Ã  l'API
 var connectionString = builder.Configuration.GetConnectionString("WebApiDatabase");
 builder.Services.AddNpgsql<AppDbContext>(connectionString);
 
 //Construction de l'application
 var app = builder.Build();
 
-//Application des différents endpoints définis dans les fichiers situés sous /Endpoints
+//Application des diffÃ©rents endpoints dÃ©finis dans les fichiers situÃ©s sous /Endpoints
 app.MapDonneeEndpoints();
 app.MapPieceEndpoints();
 app.MapAppareilEndpoints();
 
-//Définition de la route racine par défaut (sera peut-être changée pour prendre en charge une interface web)
+//Dï¿½finition de la route racine par dÃ©faut (sera peut-Ãªtre changï¿½e pour prendre en charge une interface web)
 app.MapGet("/", () => "Hello World!");
 
-//Migration automatique de la base de données au démarrage de l'application
+//Migration automatique de la base de donnÃ©es au dÃ©marrage de l'application
 app.MigrateDatabase();
 
 //Lancement de l'API
